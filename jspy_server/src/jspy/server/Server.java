@@ -28,6 +28,10 @@ public class Server implements Runnable, DisconnectedClientListener {
     private ServerSocket serverSocket;
     private JSpyServer appGUI;
     private ImageUpdaterThread imageUpdateThread;
+
+    /**
+     *
+     */
     public static long idClientDeleted = -1;
 
     private Server() {
@@ -43,6 +47,10 @@ public class Server implements Runnable, DisconnectedClientListener {
 
     }
 
+    /**
+     *
+     * @return
+     */
     public static Server getInstance() {
         if (_server == null) {
             _server = new Server();
@@ -50,6 +58,10 @@ public class Server implements Runnable, DisconnectedClientListener {
         return _server;
     }
 
+    /**
+     *
+     * @param appGUI
+     */
     public void init(JSpyServer appGUI) {
         this.appGUI = appGUI;
         new Thread(this).start();
@@ -61,18 +73,18 @@ public class Server implements Runnable, DisconnectedClientListener {
     @Override
     public void run() {
         Socket socketCliente;
-        ClientThread hc;
+        ClientThread clientThread;
         while (true) {
             try {
                 System.out.println("Esperando a clientes...");
                 socketCliente = serverSocket.accept();
 
-                hc = new ClientThread(
+                clientThread = new ClientThread(
                         socketCliente,
                         this
                 );
-                hc.start();
-                clients.add(hc);
+                clientThread.start();
+                clients.add(clientThread);
 
             } catch (IOException ex) {
                 Logger.getLogger(JSpyServer.class.getName()).log(Level.SEVERE, null, ex);
@@ -81,34 +93,60 @@ public class Server implements Runnable, DisconnectedClientListener {
     }
     //</editor-fold>
 
+    /**
+     *
+     * @param id
+     */
     @Override
     public void whenClientDisconnected(long id) {
         deleteClient(id);
     }
-    
-    public void deleteClient(long id){
+
+    /**
+     *
+     * @param id
+     */
+    public void deleteClient(long id) {
         clients.remove(getClient(id));
         Server.idClientDeleted = id;
     }
 
+    /**
+     *
+     * @return
+     */
     public List<ClientThread> getClients() {
         return clients;
     }
 
+    /**
+     *
+     * @return
+     */
     public int getClientCount() {
         return clients.size();
     }
 
+    /**
+     *
+     * @param id
+     * @return
+     */
     public ClientThread getClient(long id) {
-        for (ClientThread hc : clients) {
-            if (hc.getId() == id) {
-                return hc;
+        for (ClientThread clientThread : clients) {
+            if (clientThread.getId() == id) {
+                return clientThread;
             }
         }
 
         return null;
     }
 
+    /**
+     *
+     * @param index
+     * @return
+     */
     public ClientThread getClient(int index) {
         return clients.get(index);
     }

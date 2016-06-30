@@ -9,15 +9,19 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
 import jspy.model.ClientThread;
-import static jspy.common.K.ALTO;
-import static jspy.common.K.ALTO_ZOOM;
-import static jspy.common.K.ANCHO;
-import static jspy.common.K.ANCHO_ZOOM;
-import jspy.common.Mensaje;
+import jspy.common.Message;
 import jspy.interprete.Interprete;
 import jspy.interprete.excepciones.SyntaxParametroException;
 import jspy.server.Server;
+import static jspy.common.JspyConstants.WIDTH;
+import static jspy.common.JspyConstants.HEIGHT;
+import static jspy.common.JspyConstants.ZOOM_WIDTH;
+import static jspy.common.JspyConstants.HEIGHT_ZOOM;
 
+/**
+ *
+ * @author LAB-315
+ */
 public class JSpyServer extends javax.swing.JFrame {
 
     private List<JLabel> labels;
@@ -25,6 +29,9 @@ public class JSpyServer extends javax.swing.JFrame {
     private JSpyServer _appGUI;
 //    private final List<String> listaNombres = new ArrayList<>();
 
+    /**
+     *
+     */
     public JSpyServer() {
         initComponents();
         labels = new ArrayList();
@@ -143,7 +150,7 @@ public class JSpyServer extends javax.swing.JFrame {
 
             if (ob instanceof ClientThread) {
                 ClientThread ct = (ClientThread) ob;
-                ct.redimensionarImagen(ANCHO_ZOOM, ALTO_ZOOM);
+                ct.redimensionarImagen(ZOOM_WIDTH, HEIGHT_ZOOM);
             }
         }
     }//GEN-LAST:event_listaGrMouseReleased
@@ -153,7 +160,7 @@ public class JSpyServer extends javax.swing.JFrame {
         for (int i = 0; i < labels.size(); i++) {
             ct = Server.getInstance().getClient(i);
 
-            ct.redimensionarImagen(ANCHO, ALTO);
+            ct.redimensionarImagen(WIDTH, HEIGHT);
         }
     }//GEN-LAST:event_btnShowAllActionPerformed
 
@@ -185,7 +192,7 @@ public class JSpyServer extends javax.swing.JFrame {
                             parametro = palabras[2];
                         }
 
-                        Mensaje men = new Mensaje(mensaje);
+                        Message men = new Message(mensaje);
                         System.out.println("Mensaje --> " + mensaje);
 
                         System.out.println("Parametro --> " + parametro);
@@ -253,6 +260,10 @@ public class JSpyServer extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jButton2ActionPerformed
 
+    /**
+     *
+     * @param args
+     */
     public static void main(String args[]) {
 
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -262,6 +273,10 @@ public class JSpyServer extends javax.swing.JFrame {
         });
     }
 
+    /**
+     *
+     * @param o
+     */
     public void enviarObjetoATodos(Object o) {
         System.out.println("Enviando un objeto a todos..." + o);
         for (ClientThread h : Server.getInstance().getClients()) {
@@ -269,6 +284,11 @@ public class JSpyServer extends javax.swing.JFrame {
         }
     }
 
+    /**
+     *
+     * @param o
+     * @param id
+     */
     public void enviarObjeto(Object o, long id) {
         System.out.println("Enviando un objeto a [" + id + "]..." + o);
         for (ClientThread h : Server.getInstance().getClients()) {
@@ -293,6 +313,12 @@ public class JSpyServer extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
 
     /*Este método se llama cuando llega un cliente nuevo*/
+
+    /**
+     *
+     * @param ct
+     */
+
     public void setImageToLabel(ClientThread ct) {
         JLabel lbl = new JLabel();
 
@@ -318,9 +344,9 @@ public class JSpyServer extends javax.swing.JFrame {
 
                     ClientThread ct = Server.getInstance().getClient(clientID);
                     if (ct.isImageZoomed()) {
-                        ct.redimensionarImagen(ANCHO, ALTO);
+                        ct.redimensionarImagen(WIDTH, HEIGHT);
                     } else {
-                        ct.redimensionarImagen(ANCHO_ZOOM, ALTO_ZOOM);
+                        ct.redimensionarImagen(ZOOM_WIDTH, HEIGHT_ZOOM);
                     }
                 }
             }
@@ -334,12 +360,15 @@ public class JSpyServer extends javax.swing.JFrame {
             }
         });
 //                                        lbl.setFont(new java.awt.Font("Ubuntu", 1, 14));
-        lbl.setText(ct.getId() + ".- " + ct.getImagen().getNombreCliente());
+        lbl.setText(ct.getId() + ".- " + ct.getImagen().getClientName());
         labels.add(lbl);
         labelsPanel.add(lbl);
 //        listaNombres.add(ct.getId() + ".- " + ct.getImagen().getNombreCliente());
     }
 
+    /**
+     *
+     */
     public void setClientThreadListModel() {
 
         listaGr.setModel(new javax.swing.AbstractListModel() {
@@ -357,6 +386,9 @@ public class JSpyServer extends javax.swing.JFrame {
         });
     }
 
+    /**
+     *
+     */
     public void labelImagesUpdate() {
         /*Actualizando las imagenes de los labels*/
         if (Server.idClientDeleted != -1) {
@@ -390,10 +422,18 @@ public class JSpyServer extends javax.swing.JFrame {
         /*Actualizando las imagenes de los labels*/
     }
 
+    /**
+     *
+     * @return
+     */
     public List<JLabel> getLabels() {
         return labels;
     }
 
+    /**
+     *
+     * @return
+     */
     public int getLabelsSize() {
         return labels.size();
     }

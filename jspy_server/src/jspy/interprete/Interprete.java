@@ -6,14 +6,33 @@ import jspy.interprete.excepciones.ComandoNotFoundException;
 import jspy.interprete.excepciones.SyntaxComandoException;
 import jspy.interprete.excepciones.SyntaxParametroException;
 
+/**
+ *
+ * @author LAB-315
+ */
 public class Interprete {
 
     private final List<Comando> comandos;
 
+    /**
+     *
+     */
     public static enum IdComando {
-        msg, help
+
+        /**
+         *
+         */
+        msg,
+
+        /**
+         *
+         */
+        help
     }
 
+    /**
+     *
+     */
     public Interprete() {
         comandos = new ArrayList<>();
 
@@ -32,6 +51,13 @@ public class Interprete {
         comandos.add(help);
     }
 
+    /**
+     *
+     * @param sentencia
+     * @return
+     * @throws SyntaxComandoException
+     * @throws ComandoNotFoundException
+     */
     public IdComando getIdComando(String sentencia) throws SyntaxComandoException, ComandoNotFoundException {
         String nombreComando;
         if (sentencia.charAt(0) == '/') {
@@ -49,6 +75,12 @@ public class Interprete {
         throw new ComandoNotFoundException("\""+nombreComando+"\" no se reconoce como un comando válido");
     }
 
+    /**
+     *
+     * @param sentencia
+     * @return
+     * @throws SyntaxParametroException
+     */
     public List<String> getParametros(String sentencia) throws SyntaxParametroException {
         List<String> params = new ArrayList<>();
 
@@ -125,6 +157,12 @@ public class Interprete {
         return null;
     }
     
+    /**
+     *
+     * @param id
+     * @param parametro
+     * @return
+     */
     public boolean isParametroOK(IdComando id, String parametro){
         return getComando(id).existeParametro(parametro);
     }

@@ -1,7 +1,7 @@
 package jspy.model;
 
-import jspy.common.Imagen;
-import jspy.common.ImagenBytes;
+import jspy.common.EnhancedImage;
+import jspy.common.ClientImageByte;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,66 +12,71 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
-import jspy.common.K;
-import static jspy.common.K.ALTO;
-import static jspy.common.K.ANCHO;
+import jspy.common.JspyConstants;
+import static jspy.common.JspyConstants.WIDTH;
+import static jspy.common.JspyConstants.HEIGHT;
 
 /**
  *
  * @author pperezp
  */
 public class ClientThread extends Thread{
-    private Socket socket;
+    private final Socket socket;
     private ImageIcon imgen;
     private InputStream inputStream;
-    private ObjectInputStream ois;
-    private ObjectOutputStream oos;
-    private Object o;
-    private ImagenBytes imBytes;
-    private Imagen im;
-    private boolean vivo;
-    private String nombre;
-    private int ancho;
-    private int alto;
-    private DisconnectedClientListener listener;
+    private ObjectInputStream objectInputStream;
+    private ObjectOutputStream objectOutputStream;
+    private Object object;
+    private ClientImageByte clientByteImage;
+    private EnhancedImage enhancedImage;
+    private boolean alive;
+    private String name;
+    private int width;
+    private int height;
+    private final DisconnectedClientListener disconnectedClientListener;
 
+    /**
+     *
+     * @param socket
+     * @param listener
+     */
     public ClientThread(Socket socket,DisconnectedClientListener listener) {
         this.socket = socket;
         System.out.println("["+new Date()+"] Nuevo Cliente --> "+socket.getInetAddress());
-        vivo = true;
-        redimensionarImagen(ANCHO, ALTO);
-        this.listener = listener;
+        alive = true;
+        redimensionarImagen(WIDTH, HEIGHT);
+        this.disconnectedClientListener = listener;
     }
     
     @Override
     public void run(){
         boolean primeraVez = true;
-        while(vivo){
+        while(alive){
             try {
                 inputStream = socket.getInputStream();
                 System.out.println(new Date()+" Esperando un objeto desde el cliente...");
-                ois = new ObjectInputStream(inputStream);
+                objectInputStream = new ObjectInputStream(inputStream);
                 System.out.println(new Date()+" Llegó objeto!");
-                o = ois.readObject();
+                object = objectInputStream.readObject();
                 
                 
-                if(o instanceof ImagenBytes){
-                    imBytes = (ImagenBytes)o;
+                if(object instanceof ClientImageByte){
+                    clientByteImage = (ClientImageByte)object;
                     System.out.println(new Date()+" Llegó imagen!");
                     
-                    im = new Imagen(imBytes, ancho, alto);
+                    enhancedImage = new EnhancedImage(clientByteImage, width, height);
                     
                     if(primeraVez){
                         primeraVez = false;
-                        nombre = imBytes.nombre;
+                        name = clientByteImage.getClientName();
                     }
                 }
                 
 //                Thread.sleep(PAUSE);
             } catch(java.net.SocketException ex){
-                vivo = false;
+                alive = false;
             } catch(EOFException ex){
-                vivo = false;
+                alive = false;
             } catch (IOException ex) {
                 Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);
             } catch (ClassNotFoundException ex) {
@@ -80,26 +85,43 @@ public class ClientThread extends Thread{
         }
         
         System.out.println("Hilo cliente terminado! --> "+getId());
-        listener.whenClientDisconnected(this.getId());
+        disconnectedClientListener.whenClientDisconnected(this.getId());
     }
 
-    public Imagen getImagen() {
-        return im;
+    /**
+     *
+     * @return
+     */
+    public EnhancedImage getImagen() {
+        return enhancedImage;
     }
     
+    /**
+     *
+     * @param ancho
+     * @param alto
+     */
     public void redimensionarImagen(int ancho, int alto){
-        this.ancho = ancho;
-        this.alto = alto;
+        this.width = ancho;
+        this.height = alto;
     }
     
+    /**
+     *
+     * @return
+     */
     public boolean isImageZoomed(){
-        return this.ancho == K.ANCHO_ZOOM;
+        return this.width == JspyConstants.ZOOM_WIDTH;
     }
     
+    /**
+     *
+     * @param o
+     */
     public void enviarObjeto(Object o){
         try {
-            oos = new ObjectOutputStream(socket.getOutputStream());
-            oos.writeObject(o);
+            objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+            objectOutputStream.writeObject(o);
             System.out.println("Objeto enviado! --> "+o);
 //            oos.close();
         } catch (IOException ex) {
@@ -107,8 +129,12 @@ public class ClientThread extends Thread{
         }
     }
 
+    /**
+     *
+     * @return
+     */
     public String getNombre() {
-        return nombre;
+        return name;
     }
 
     @Override

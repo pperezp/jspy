@@ -2,22 +2,30 @@ package jspy.model;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jspy.common.K;
-import static jspy.common.K.PAUSE;
+import jspy.common.JspyConstants;
+import static jspy.common.JspyConstants.PAUSE;
 import jspy.gui.JSpyServer;
 import jspy.server.Server;
 
+/**
+ *
+ * @author LAB-315
+ */
 public class ImageUpdaterThread implements Runnable {
 
     private final JSpyServer appGUI;
 
+    /**
+     *
+     * @param appGUI
+     */
     public ImageUpdaterThread(JSpyServer appGUI) {
         this.appGUI = appGUI;
     }
 
     @Override
     public void run() {
-        int vueltas;
+        int laps;
         int clientCount, labelsCount;
         ClientThread ct;
 
@@ -27,9 +35,9 @@ public class ImageUpdaterThread implements Runnable {
             try {
                 labelsCount = appGUI.getLabelsSize();
                 if (clientCount > labelsCount) { // si llego un nuevo cliente
-                    vueltas = clientCount - labelsCount;
+                    laps = clientCount - labelsCount;
 
-                    for (int i = (clientCount - vueltas); i < clientCount; i++) {
+                    for (int i = (clientCount - laps); i < clientCount; i++) {
                         try {
                             ct = Server.getInstance().getClient(i);
                             appGUI.setImageToLabel(ct);
