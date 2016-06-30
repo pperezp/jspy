@@ -1,142 +1,34 @@
 package jspy.gui;
 
 import com.sun.glass.events.KeyEvent;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
-import jspy.model.HiloCliente;
+import jspy.model.ClientThread;
 import static jspy.common.K.ALTO;
 import static jspy.common.K.ALTO_ZOOM;
 import static jspy.common.K.ANCHO;
 import static jspy.common.K.ANCHO_ZOOM;
-import static jspy.common.K.PAUSE;
 import jspy.common.Mensaje;
 import jspy.interprete.Interprete;
 import jspy.interprete.excepciones.SyntaxParametroException;
+import jspy.server.Server;
 
 public class JSpyServer extends javax.swing.JFrame {
 
-    private ServerSocket server;
-    private List<HiloCliente> clientes;
     private List<JLabel> labels;
     private boolean mostrarTodos;
-    private final List<String> listaNombres = new ArrayList<>();
+    private JSpyServer _appGUI;
+//    private final List<String> listaNombres = new ArrayList<>();
 
     public JSpyServer() {
         initComponents();
-
-        try {
-            clientes = new ArrayList<>();
-            labels = new ArrayList<>();
-            server = new ServerSocket(7777);
-            System.out.println("Escuchando en el puerto 777...");
-
-            /*---------------Hilo del server----------------*/
-            new Thread(new Runnable() {
-
-                @Override
-                public void run() {
-                    Socket socketCliente;
-                    HiloCliente hc;
-
-                    while (true) {
-                        try {
-                            System.out.println("Esperando a clientes...");
-                            socketCliente = server.accept();
-
-                            hc = new HiloCliente(socketCliente, String.valueOf(clientes.size()));
-                            hc.start();
-                            clientes.add(hc);
-
-                        } catch (IOException ex) {
-                            Logger.getLogger(JSpyServer.class.getName()).log(Level.SEVERE, null, ex);
-                        }
-                    }
-                }
-            }).start();
-            /*---------------Hilo del server----------------*/
-
-            new Thread(new Runnable() {
-
-                @Override
-                public void run() {
-                    JLabel lbl;
-                    HiloCliente hc;
-                    int vueltas;
-                    int cantClientes, cantLabels;
-                    
-
-                    while (true) {
-                        cantClientes = clientes.size();
-                        cantLabels = labels.size();
-                        try {
-                            if (cantClientes > cantLabels) { // si llego un nuevo cliente
-
-                                vueltas = cantClientes - cantLabels;
-
-                                for (int i = (cantClientes - vueltas); i < cantClientes; i++) {
-                                    try {
-                                        lbl = new JLabel();
-                                        hc = clientes.get(i);
-
-                                        lbl.setIcon(hc.getImagen().getImageIcon());
-                                        lbl.setHorizontalTextPosition(SwingConstants.CENTER);
-                                        lbl.setVerticalTextPosition(SwingConstants.BOTTOM);
-                                        lbl.setFont(new java.awt.Font("Ubuntu", 1, 14));
-                                        lbl.setText(i + ".- " + hc.getImagen().getNombreCliente());
-                                        labels.add(lbl);
-
-                                        jPanel1.add(lbl);
-                                        listaNombres.add(i + ".- " + hc.getImagen().getNombreCliente());
-
-                                        i++;
-                                    } catch (Exception e) {
-                                        System.out.println(e.getMessage());
-                                    }
-
-                                    listaGr.setModel(new javax.swing.AbstractListModel() {
-
-                                        @Override
-                                        public int getSize() {
-                                            return listaNombres.size();
-                                        }
-
-                                        @Override
-                                        public Object getElementAt(int i) {
-                                            return listaNombres.get(i);
-                                        }
-                                    });
-                                }
-                            }
-
-                            /*Actualizando las imagenes de los labels*/
-                            for (int i = 0; i < labels.size(); i++) {
-                                hc = clientes.get(i);
-
-                                labels.get(i).setIcon(hc.getImagen().getImageIcon());
-//                                System.out.println(hc.getImagen().getImage().getWidth(null)+" - "+hc.getImagen().getImage().getHeight(null));
-                            }
-
-                            jPanel1.updateUI();
-                            /*Actualizando las imagenes de los labels*/
-
-                            Thread.sleep(PAUSE);
-                        } catch (InterruptedException ex) {
-                            Logger.getLogger(JSpyServer.class.getName()).log(Level.SEVERE, null, ex);
-                        }
-                    }
-                }
-            }).start();
-        } catch (IOException ex) {
-            Logger.getLogger(JSpyServer.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        labels = new ArrayList();
+        Server.getInstance().init(this);
     }
 
     @SuppressWarnings("unchecked")
@@ -146,12 +38,13 @@ public class JSpyServer extends javax.swing.JFrame {
         txtComando = new javax.swing.JTextField();
         jSplitPane1 = new javax.swing.JSplitPane();
         jScrollPane1 = new javax.swing.JScrollPane();
-        jPanel1 = new javax.swing.JPanel();
+        labelsPanel = new javax.swing.JPanel();
         jPanel2 = new javax.swing.JPanel();
         jScrollPane2 = new javax.swing.JScrollPane();
         listaGr = new javax.swing.JList();
-        jButton1 = new javax.swing.JButton();
+        btnShowAll = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -166,8 +59,8 @@ public class JSpyServer extends javax.swing.JFrame {
             }
         });
 
-        jPanel1.setLayout(new java.awt.GridLayout(0, 3));
-        jScrollPane1.setViewportView(jPanel1);
+        labelsPanel.setLayout(new java.awt.GridLayout(0, 3));
+        jScrollPane1.setViewportView(labelsPanel);
 
         jSplitPane1.setRightComponent(jScrollPane1);
 
@@ -178,10 +71,10 @@ public class JSpyServer extends javax.swing.JFrame {
         });
         jScrollPane2.setViewportView(listaGr);
 
-        jButton1.setText("Mostrar Todos");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        btnShowAll.setText("Mostrar Todos");
+        btnShowAll.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                btnShowAllActionPerformed(evt);
             }
         });
 
@@ -190,14 +83,14 @@ public class JSpyServer extends javax.swing.JFrame {
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jScrollPane2)
-            .addComponent(jButton1, javax.swing.GroupLayout.DEFAULT_SIZE, 282, Short.MAX_VALUE)
+            .addComponent(btnShowAll, javax.swing.GroupLayout.DEFAULT_SIZE, 282, Short.MAX_VALUE)
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 360, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButton1))
+                .addComponent(btnShowAll))
         );
 
         jSplitPane1.setLeftComponent(jPanel2);
@@ -209,6 +102,8 @@ public class JSpyServer extends javax.swing.JFrame {
             }
         });
 
+        jLabel1.setText("jLabel1");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -219,6 +114,8 @@ public class JSpyServer extends javax.swing.JFrame {
                     .addComponent(jSplitPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 621, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(txtComando, javax.swing.GroupLayout.PREFERRED_SIZE, 285, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jLabel1)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(jButton2)))
                 .addContainerGap())
@@ -227,11 +124,13 @@ public class JSpyServer extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(txtComando, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton2))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(txtComando, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jButton2))
+                    .addComponent(jLabel1))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jSplitPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 395, Short.MAX_VALUE)
+                .addComponent(jSplitPane1)
                 .addContainerGap())
         );
 
@@ -240,83 +139,83 @@ public class JSpyServer extends javax.swing.JFrame {
 
     private void listaGrMouseReleased(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_listaGrMouseReleased
         if (evt.getClickCount() == 2) {
-            String idStr = listaGr.getSelectedValue().toString().split("\\.")[0];
-            int id = Integer.parseInt(idStr);
-            
-            HiloCliente hc = clientes.get(id);
-            hc.redimensionarImagen(ANCHO_ZOOM, ALTO_ZOOM);
+            Object ob = listaGr.getSelectedValue();
+
+            if (ob instanceof ClientThread) {
+                ClientThread ct = (ClientThread) ob;
+                ct.redimensionarImagen(ANCHO_ZOOM, ALTO_ZOOM);
+            }
         }
     }//GEN-LAST:event_listaGrMouseReleased
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        HiloCliente hc;
-        for(int i=0; i<labels.size(); i++){
-            hc = clientes.get(i);
-            
-            hc.redimensionarImagen(ANCHO, ALTO);
+    private void btnShowAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnShowAllActionPerformed
+        ClientThread ct;
+        for (int i = 0; i < labels.size(); i++) {
+            ct = Server.getInstance().getClient(i);
+
+            ct.redimensionarImagen(ANCHO, ALTO);
         }
-    }//GEN-LAST:event_jButton1ActionPerformed
+    }//GEN-LAST:event_btnShowAllActionPerformed
 
     private void txtComandoKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtComandoKeyReleased
         /*
         Comandos:
             /msg [mensaje] -t
             /msg [mensaje] -a [idAlumno]
-        */
-        
-        if(evt.getKeyCode() == KeyEvent.VK_ENTER){
+         */
+
+        if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
             String comando = txtComando.getText();
-            
-            if(comando.charAt(0) == '/'){
+
+            if (comando.charAt(0) == '/') {
                 String[] palabras = comando.split(" ");
-                
-                switch(palabras[0]){
-                    case "/msg":{
+
+                switch (palabras[0]) {
+                    case "/msg": {
                         System.out.println("comando msg...");
                         String mensaje;
                         String parametro;
                         String idAlumno;
-                        
-                        if(comando.contains("\"")){
+
+                        if (comando.contains("\"")) {
                             mensaje = comando.split("\"")[1];
                             parametro = comando.split("\"")[2].trim().substring(0, 2);
-                        }else{
+                        } else {
                             mensaje = palabras[1];
                             parametro = palabras[2];
                         }
-                        
+
                         Mensaje men = new Mensaje(mensaje);
-                        System.out.println("Mensaje --> "+mensaje);
-                        
-                        System.out.println("Parametro --> "+parametro);
-                        switch(parametro){
-                            case "-t":{
+                        System.out.println("Mensaje --> " + mensaje);
+
+                        System.out.println("Parametro --> " + parametro);
+                        switch (parametro) {
+                            case "-t": {
                                 // mensaje hacia todos!
                                 enviarObjetoATodos(men);
                                 break;
                             }
-                            
-                            case "-a":{
+
+                            case "-a": {
                                 // mensaje para alguien en especifico
                                 idAlumno = comando.split("\"")[2].trim().split(" ")[1];
-                                System.out.println("ID Alumno --> "+idAlumno);
-                                enviarObjeto(men, idAlumno);
+                                System.out.println("ID Alumno --> " + idAlumno);
+                                enviarObjeto(men, Long.parseLong(idAlumno));
                                 break;
                             }
                         }
-                        
+
                         break;
                     }
                 }
             }
-            
+
             txtComando.setText("");
             txtComando.requestFocus();
         }
-        
+
         /*Filtro de busqueda de usuarios*/
-        
-        /*final List<String> filtro = new ArrayList<>();
+ /*final List<String> filtro = new ArrayList<>();
         for(String nombre : listaNombres){
             if(nombre.toLowerCase().contains(jTextField1.getText().toLowerCase())){
                 filtro.add(nombre);
@@ -344,10 +243,9 @@ public class JSpyServer extends javax.swing.JFrame {
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         try {
             Interprete i = new Interprete();
-            
+
 //        System.out.println(i.getIdComando(txtComando.getText()));
-            
-            for(String p:i.getParametros(txtComando.getText())){
+            for (String p : i.getParametros(txtComando.getText())) {
                 System.out.println(p);
             }
         } catch (SyntaxParametroException ex) {
@@ -364,32 +262,140 @@ public class JSpyServer extends javax.swing.JFrame {
         });
     }
 
-    public void enviarObjetoATodos(Object o){
-        System.out.println("Enviando un objeto a todos..."+o);
-        for(HiloCliente h : clientes){
+    public void enviarObjetoATodos(Object o) {
+        System.out.println("Enviando un objeto a todos..." + o);
+        for (ClientThread h : Server.getInstance().getClients()) {
             h.enviarObjeto(o);
         }
     }
-    
-    public void enviarObjeto(Object o, String id){
-        System.out.println("Enviando un objeto a ["+id+"]..."+o);
-        for(HiloCliente h : clientes){
-            if(h.getID().equals(id)){
+
+    public void enviarObjeto(Object o, long id) {
+        System.out.println("Enviando un objeto a [" + id + "]..." + o);
+        for (ClientThread h : Server.getInstance().getClients()) {
+            if (h.getId() == id) {
                 h.enviarObjeto(o);
                 break;
             }
         }
     }
-    
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
+    private javax.swing.JButton btnShowAll;
     private javax.swing.JButton jButton2;
-    private javax.swing.JPanel jPanel1;
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JSplitPane jSplitPane1;
+    private javax.swing.JPanel labelsPanel;
     private javax.swing.JList listaGr;
     private javax.swing.JTextField txtComando;
     // End of variables declaration//GEN-END:variables
+
+    /*Este método se llama cuando llega un cliente nuevo*/
+    public void setImageToLabel(ClientThread ct) {
+        JLabel lbl = new JLabel();
+
+        lbl.setIcon(ct.getImagen().getImageIcon());
+        lbl.setHorizontalTextPosition(SwingConstants.CENTER);
+        lbl.setVerticalTextPosition(SwingConstants.BOTTOM);
+        lbl.setName(String.valueOf(ct.getId()));
+
+        lbl.addMouseListener(new MouseListener() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    JLabel lbl = (JLabel) e.getSource();
+                    long clientID = Long.parseLong(lbl.getName());
+
+                    ClientThread ct = Server.getInstance().getClient(clientID);
+                    if (ct.isImageZoomed()) {
+                        ct.redimensionarImagen(ANCHO, ALTO);
+                    } else {
+                        ct.redimensionarImagen(ANCHO_ZOOM, ALTO_ZOOM);
+                    }
+                }
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+            }
+        });
+//                                        lbl.setFont(new java.awt.Font("Ubuntu", 1, 14));
+        lbl.setText(ct.getId() + ".- " + ct.getImagen().getNombreCliente());
+        labels.add(lbl);
+        labelsPanel.add(lbl);
+//        listaNombres.add(ct.getId() + ".- " + ct.getImagen().getNombreCliente());
+    }
+
+    public void setClientThreadListModel() {
+
+        listaGr.setModel(new javax.swing.AbstractListModel() {
+            List<ClientThread> clientes = Server.getInstance().getClients();
+
+            @Override
+            public int getSize() {
+                return clientes.size();
+            }
+
+            @Override
+            public Object getElementAt(int i) {
+                return clientes.get(i);
+            }
+        });
+    }
+
+    public void labelImagesUpdate() {
+        /*Actualizando las imagenes de los labels*/
+        if (Server.idClientDeleted != -1) {
+            // se ha borrado al idClienteDeleted
+            for (int i = 0; i < labels.size(); i++) {
+                if(labels.get(i).getName().equals(String.valueOf(Server.idClientDeleted))){
+                    labelsPanel.remove(labels.get(i));
+                    labels.remove(i);
+                    System.out.println("Removido!!!");
+                    break;
+                }
+            }
+            
+            // actualizo la el modelo de la lista
+            setClientThreadListModel();
+            
+            Server.idClientDeleted = -1;
+        }
+
+        ClientThread ct;
+        JLabel lbl;
+        for (int i = 0; i < labels.size(); i++) {
+            ct = Server.getInstance().getClient(i);
+
+            lbl = labels.get(i);
+            lbl.setIcon(ct.getImagen().getImageIcon());
+            //              System.out.println(hc.getImagen().getImage().getWidth(null)+" - "+hc.getImagen().getImage().getHeight(null));
+        }
+
+        labelsPanel.updateUI();
+        /*Actualizando las imagenes de los labels*/
+    }
+
+    public List<JLabel> getLabels() {
+        return labels;
+    }
+
+    public int getLabelsSize() {
+        return labels.size();
+    }
+
 }

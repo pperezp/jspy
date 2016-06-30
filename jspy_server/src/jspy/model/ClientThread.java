@@ -12,16 +12,15 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
-import javax.swing.JLabel;
+import jspy.common.K;
 import static jspy.common.K.ALTO;
 import static jspy.common.K.ANCHO;
-import static jspy.common.K.PAUSE;
 
 /**
  *
  * @author pperezp
  */
-public class HiloCliente extends Thread{
+public class ClientThread extends Thread{
     private Socket socket;
     private ImageIcon imgen;
     private InputStream inputStream;
@@ -32,16 +31,16 @@ public class HiloCliente extends Thread{
     private Imagen im;
     private boolean vivo;
     private String nombre;
-    private String id;
     private int ancho;
     private int alto;
+    private DisconnectedClientListener listener;
 
-    public HiloCliente(Socket socket, String id) {
+    public ClientThread(Socket socket,DisconnectedClientListener listener) {
         this.socket = socket;
-        System.out.println("["+new Date()+"]Nuevo Cliente --> "+socket.getInetAddress());
+        System.out.println("["+new Date()+"] Nuevo Cliente --> "+socket.getInetAddress());
         vivo = true;
         redimensionarImagen(ANCHO, ALTO);
-        this.id = id;
+        this.listener = listener;
     }
     
     @Override
@@ -50,14 +49,15 @@ public class HiloCliente extends Thread{
         while(vivo){
             try {
                 inputStream = socket.getInputStream();
+                System.out.println(new Date()+" Esperando un objeto desde el cliente...");
                 ois = new ObjectInputStream(inputStream);
-//                System.out.println("Llego objeto!");
+                System.out.println(new Date()+" Llegó objeto!");
                 o = ois.readObject();
                 
                 
                 if(o instanceof ImagenBytes){
                     imBytes = (ImagenBytes)o;
-//                    System.out.println("Llego imagen!");
+                    System.out.println(new Date()+" Llegó imagen!");
                     
                     im = new Imagen(imBytes, ancho, alto);
                     
@@ -68,16 +68,19 @@ public class HiloCliente extends Thread{
                 }
                 
 //                Thread.sleep(PAUSE);
+            } catch(java.net.SocketException ex){
+                vivo = false;
             } catch(EOFException ex){
                 vivo = false;
             } catch (IOException ex) {
-                Logger.getLogger(HiloCliente.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);
             } catch (ClassNotFoundException ex) {
-                Logger.getLogger(HiloCliente.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);
             } 
         }
         
-        System.out.println("Hilo cliente terminado! --> "+nombre);
+        System.out.println("Hilo cliente terminado! --> "+getId());
+        listener.whenClientDisconnected(this.getId());
     }
 
     public Imagen getImagen() {
@@ -89,6 +92,10 @@ public class HiloCliente extends Thread{
         this.alto = alto;
     }
     
+    public boolean isImageZoomed(){
+        return this.ancho == K.ANCHO_ZOOM;
+    }
+    
     public void enviarObjeto(Object o){
         try {
             oos = new ObjectOutputStream(socket.getOutputStream());
@@ -96,7 +103,7 @@ public class HiloCliente extends Thread{
             System.out.println("Objeto enviado! --> "+o);
 //            oos.close();
         } catch (IOException ex) {
-            Logger.getLogger(HiloCliente.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -104,11 +111,10 @@ public class HiloCliente extends Thread{
         return nombre;
     }
 
-    public String getID() {
-        return id;
+    @Override
+    public String toString() {
+        return this.getId() + ".- "+this.getNombre();
     }
-    
-    
     
     
 }

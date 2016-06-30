@@ -108,9 +108,9 @@ public class JSpyClient_noGUI {
                 }
             }
         }).start();
-
         /*Hilo para enviar los pantallazos*/
-        /*Hilo para recibir objetos*/
+
+ /*Hilo para recibir objetos*/
         new Thread(new Runnable() {
 
             @Override
@@ -129,7 +129,7 @@ public class JSpyClient_noGUI {
                                 Logger.getLogger(JSpyClient_noGUI.class.getName()).log(Level.SEVERE, null, ex);
                             }
                         }
-                        
+
                         System.out.println("Conectado! [Hilo recibir objetos]");
 
                         try {
@@ -147,7 +147,7 @@ public class JSpyClient_noGUI {
 
                                 JOptionPane.showMessageDialog(null, men.getContenido());
                             }
-                        } catch (EOFException e) {
+                        } catch (SocketException | EOFException se) {
                             desconectado = true;
                             try {
                                 System.out.println("Conexión perdida...5 seg...");
@@ -158,7 +158,7 @@ public class JSpyClient_noGUI {
                         }
 
                     }
-                    
+
                 } catch (IOException ex) {
                     Logger.getLogger(JSpyClient_noGUI.class.getName()).log(Level.SEVERE, null, ex);
                 } catch (ClassNotFoundException ex) {
